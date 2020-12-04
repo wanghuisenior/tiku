@@ -24,5 +24,4 @@ Hit Ctrl-C to quit.<br>即为启动成功，出现其他异常表示失败
 	    	}
     	}
 2. 在答题函数获取到问题和答案的地方调用该函数：updateToServer(question,answer)即可。
-![](https://github.com/wanghuisenior/xxqg_tiku/blob/main/1.png)		
 # 注：本项目为个人学习bottle编写，不得用于违法或商业用途，否则造成的一切后果自负！
