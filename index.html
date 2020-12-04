@@ -18,6 +18,10 @@
             margin: 0 auto;
             font-size: 20px;
         }
+
+        .datagrid-header-rownumber, .datagrid-cell-rownumber {
+            width: 33px;
+        }
     </style>
 </head>
 <body>
@@ -132,7 +136,7 @@
         columns: [[
             {checkbox: true},
             // {field: 'id', title: 'ID', width: 20},
-            {field: 'question', title: '题目', width: 200},
+            {field: 'question', title: '题目', width: 180},
             {field: 'answer', title: '答案', width: 80},
             {
                 field: 'datetime', title: '创建时间', sortable: true,
