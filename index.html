@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>强国题库</title>
+    <link rel="stylesheet" type="text/css" href="./easyui1.3.4/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="./easyui1.3.4/themes/icon.css">
+    <script src="./jquery.min.js"></script>
+    <script src="./easyui1.3.4/jquery.easyui.min.js"></script>
+    <script src="./easyui1.3.4/locale/easyui-lang-zh_CN.js"></script>
+    <style>
+        .s1 {
+            width: 800px;
+            /*height: 500px; !*设置div的大小*!*/
+            border: 1px solid green; /*边框*/
+            text-align: center; /*文字水平居中对齐*/
+            overflow: hidden;
+            margin: 0 auto;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="s1">
+    <h3></h3>
+    <h3></h3>
+    <input type="text" id="question" autocomplete="off" placeholder="题目" value="">
+    <h3></h3>
+    <input type="text" id="answer" autocomplete="off" placeholder="答案" value="">
+    <br>
+    <button onclick="submit()">添加</button>
+    <br>
+    <input type="text" id="keyword" autocomplete="off" placeholder="关键字" value="">
+    <button onclick="search()">查询</button>
+    <br>
+    <br>
+    <table id="table"></table>
+</div>
+<script>
+    function submit() {
+        var q = $("#question").val();
+        var a = $("#answer").val();
+        if (q && a) {
+            $.post("insertOrUpdate",
+                {"question": q, "answer": a},
+                function (res) {
+                    $("#table").datagrid("reload");
+                });
+        }
+    }
+
+    function search() {
+        $("#table").datagrid('load', {'keyword': $("#keyword").val()});
+    }
+
+    $('#table').datagrid({
+        url: 'search',
+        method: 'GET',
+        height: 360,
+        singleSelect: false,
+        // checkOnSelect: false,
+        pageSize: 10,
+        pagination: true,
+        fitColumns: true,
+        striped: true,
+        rownumbers: true,
+        // fit:true,
+        toolbar: [
+            {
+                iconCls: 'icon-no',
+                text: '删除选中行',
+                handler: function () {
+                    var checked = $("#table").datagrid("getChecked");
+                    var ids = [];
+                    for (var i = 0; i < checked.length; i++) {
+                        ids.push(checked[i].id);
+                    }
+                    // console.log($("#table").datagrid("getSelections"));
+                    $.messager.confirm('提示', '确认删除吗?', function (r) {
+                        if (r) {
+                            $.getJSON('deleteById', {'ids': ids}, function (res) {
+                                $.messager.show({
+                                    title: '提示',
+                                    msg: res == 200 ? '删除成功' : '删除失败',
+                                    showType: 'fade',      //设置显示类型
+                                    style: {},     //设置弹框的位置
+                                    // width:100,                           //设置弹框的宽度和高度
+                                    // height:200,
+                                    timeout: 500      //设置停留时间，1000毫秒
+                                });
+                                $("#table").datagrid("reload");
+                            })
+                        }
+                    });
+                }
+            }, '-',
+            {
+                iconCls: 'icon-search',
+                text: '查询题目相同的数据',
+                handler: function () {
+                    $("#table").datagrid("loading");
+                    $.getJSON('searchRepeatData', function (res) {
+                        $("#table").datagrid("loadData", res);
+                        $("#table").datagrid("loaded");
+                    })
+                }
+            }, '-',
+            {
+                iconCls: 'icon-cancel',
+                text: '清除重复数据',
+                handler: function () {
+                    $.messager.prompt('提示', '确认删除题目和答案相同的数据,仅保留最早的一条?确认请输入 yes', function (r) {
+                        if (r == 'yes') {
+                            $.getJSON('onekeyclear', function (res) {
+                                $.messager.show({
+                                    title: '提示',
+                                    msg: res == 200 ? '删除成功' : '删除失败',
+                                    showType: 'fade',      //设置显示类型
+                                    style: {},     //设置弹框的位置
+                                    // width:100,                           //设置弹框的宽度和高度
+                                    // height:200,
+                                    timeout: 500      //设置停留时间，1000毫秒
+                                });
+                                $("#table").datagrid("reload");
+                            })
+                        }
+                    });
+                }
+            },
+        ],
+        columns: [[
+            {checkbox: true},
+            // {field: 'id', title: 'ID', width: 20},
+            {field: 'question', title: '题目', width: 200},
+            {field: 'answer', title: '答案', width: 80},
+            {field: 'datetime', title: '创建时间'},
+            {
+                field: 'operate', title: '操作', align: 'center', width: 30,
+                formatter: function (value, row, index) {
+                    var del = '<a name="opera" class="easyui-linkbutton" data-options="plain:true,iconCls:\'icon-remove\'" onclick="deleteRow(' + index + ')"></a>';
+                    return del;
+                }
+            }
+        ]],
+        onLoadSuccess: function (data) {
+            $("a[name='opera']").linkbutton({text: '删除', plain: true, iconCls: 'icon-remove'});
+        }
+    });
+
+    function deleteRow(index) {
+        var row = $("#table").datagrid("getRows")[index];
+        // $.messager.progress();
+        $.messager.confirm('提示', '确认删除吗?', function (r) {
+            if (r) {
+                $.getJSON('deleteById', {'ids': [row.id]}, function (res) {
+                    $.messager.show({
+                        title: '提示',
+                        msg: res == 200 ? '删除成功' : '删除失败',
+                        showType: 'fade',      //设置显示类型
+                        style: {},     //设置弹框的位置
+                        // width:100,                           //设置弹框的宽度和高度
+                        // height:200,
+                        timeout: 200      //设置停留时间，1000毫秒
+                    });
+                    $("#table").datagrid("reload");
+                })
+            }
+        });
+    }
+</script>
+</body>
+</html>
