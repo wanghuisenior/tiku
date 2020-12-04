@@ -94,12 +94,14 @@ def search():
 	rows = int(request.GET.decode('utf-8').get('rows', 10))
 	limit = (page - 1) * rows
 	db = DbTool()
+	total = db.query(
+		'select count(*) from tikuNet where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%"')
 	result = db.query(
 		'select * from tikuNet where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%" LIMIT ' +
 		str(limit) + ',' + str(rows))
-	data = []
+	data = {'total': total[0][0], 'rows': []}
 	for r in result:
-		data.append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': r[3]})
+		data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': r[3]})
 	return json.dumps(data)
 
 
@@ -109,9 +111,9 @@ def searchRepeatData():
 	# q = 'select * from tikuNet where question in (select  question  from  tikuNet  group  by  question  having  count(question) > 1)'
 	q = 'select *  from  tikuNet  group  by  question  having  count(question) > 1'
 	result = db.query(q)
-	data = []
+	data = {'total': len(result), 'rows': []}
 	for r in result:
-		data.append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': r[3]})
+		data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': r[3]})
 	return json.dumps(data)
 
 

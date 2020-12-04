@@ -48,6 +48,15 @@
             $.post("insertOrUpdate",
                 {"question": q, "answer": a},
                 function (res) {
+                    $.messager.show({
+                        title: '提示',
+                        msg: res == 200 ? '添加成功' : '添加失败',
+                        showType: 'fade',      //设置显示类型
+                        style: {},     //设置弹框的位置
+                        // width:100,                           //设置弹框的宽度和高度
+                        // height:200,
+                        timeout: 500      //设置停留时间，1000毫秒
+                    });
                     $("#table").datagrid("reload");
                 });
         }
