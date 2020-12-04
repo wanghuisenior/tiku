@@ -128,12 +128,28 @@
                 }
             },
         ],
+        remoteSort: false,
         columns: [[
             {checkbox: true},
             // {field: 'id', title: 'ID', width: 20},
             {field: 'question', title: '题目', width: 200},
             {field: 'answer', title: '答案', width: 80},
-            {field: 'datetime', title: '创建时间'},
+            {
+                field: 'datetime', title: '创建时间', sortable: true,
+                sorter: function (a, b) {
+                    a = a.split('/');
+                    b = b.split('/');
+                    if (a[2] == b[2]) {
+                        if (a[0] == b[0]) {
+                            return (a[1] > b[1] ? 1 : -1);
+                        } else {
+                            return (a[0] > b[0] ? 1 : -1);
+                        }
+                    } else {
+                        return (a[2] > b[2] ? 1 : -1);
+                    }
+                }
+            },
             {
                 field: 'operate', title: '操作', align: 'center', width: 30,
                 formatter: function (value, row, index) {

@@ -12,7 +12,7 @@ from bottle import route, run, static_file, request
 import sqlite3
 
 
-class DbTool():
+class DbTool:
 	def __init__(self):
 		self.db = sqlite3.connect('tiku.db')
 		self.c = self.db.cursor()
