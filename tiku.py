@@ -83,8 +83,12 @@ def insertOrUpdate():
 	print('question=', question, 'answer=', answer)
 	t = time.strftime('%Y-%m-%d %H:%M:%S')
 	db = DbTool()
-	result = db.execute('insert into tikuNet(question,answer,datetime) values (?,?,?)', (question, answer, t))
-	return json.dumps(200 if result else 500)
+	q = db.query('select * from tikuNet where question = "' + question + '" and answer = "' + answer + '"')
+	if not len(q):
+		result = db.execute('insert into tikuNet(question,answer,datetime) values (?,?,?)', (question, answer, t))
+		return json.dumps(200 if result else 500)
+	else:
+		return json.dumps(202)
 
 
 @route('/search', method=['GET'])
