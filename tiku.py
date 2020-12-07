@@ -156,5 +156,14 @@ def onekeyclear():
 	return json.dumps(200 if res else 500)
 
 
+@route('/getAnswerByQuestion', method=['GET'])
+def getAnswerByQuestion():
+	question = request.GET.decode('utf-8').get('question', '')
+	db = DbTool()
+	result = db.query('select * from tikuNet where question = ' + question)
+	# http://localhost:8088/getAnswerByQuestion?question="根据《中华人民共和国无线电管理条例》，境外组织或者个人不得在我国境内进行或者。任何单位或者个人不得向境外组织或者个人提供涉及国家安全的境内。"
+	return result[0][2]
+
+
 run(host='0.0.0.0', port=8088)
 # run(host='localhost', port=8088)
