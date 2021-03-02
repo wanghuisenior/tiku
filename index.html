@@ -28,6 +28,11 @@
 <div class="s1">
     <h3></h3>
     <h3></h3>
+    <select class="easyui-combobox" id="table_name" data-options="editable:false,panelHeight:'auto'"
+            style="width: 80px;">
+        <option value="tiku">tiku</option>
+        <option value="tikuNet">tikuNet</option>
+    </select>
     <input type="text" id="question" autocomplete="off" placeholder="题目" value="">
     <h3></h3>
     <input type="text" id="answer" autocomplete="off" placeholder="答案" value="">
@@ -46,11 +51,11 @@
         var a = $("#answer").val();
         if (q && a) {
             $.post("insertOrUpdate",
-                {"question": q, "answer": a},
+                {"question": q, "answer": a, 'table_name': $('#table_name').combobox('getValue')},
                 function (res) {
                     $.messager.show({
                         title: '提示',
-                        msg: res == 200 ? '添加成功' : '添加失败',
+                        msg: res == 200 ? '添加成功' : '添加失败,已存在',
                         showType: 'fade',      //设置显示类型
                         style: {},     //设置弹框的位置
                         // width:100,                           //设置弹框的宽度和高度
@@ -63,7 +68,10 @@
     }
 
     function search() {
-        $("#table").datagrid('load', {'keyword': $("#keyword").val()});
+        $("#table").datagrid('load', {
+            'keyword': $("#keyword").val(),
+            'table_name': $('#table_name').combobox('getValue')
+        });
     }
 
     $('#table').datagrid({
@@ -72,12 +80,16 @@
         height: 360,
         singleSelect: false,
         // checkOnSelect: false,
-        pageSize: 10,
         pagination: true,
         fitColumns: true,
         striped: true,
         rownumbers: true,
         // fit:true,
+        pageSize: 10,//每页显示的记录条数，默认为10
+        pageList: [10, 20, 50, 100, 200, 500],
+        queryParams: {
+            table_name: 'tiku',
+        },
         toolbar: [
             {
                 iconCls: 'icon-no',
@@ -86,12 +98,13 @@
                     var checked = $("#table").datagrid("getChecked");
                     var ids = [];
                     for (var i = 0; i < checked.length; i++) {
-                        ids.push(checked[i].id);
+                        //ids.push(checked[i].id);
+                        ids.push({"q": checked[i].question, "a": checked[i].answer});
                     }
-                    // console.log($("#table").datagrid("getSelections"));
+                    // console.log(JSON.parse('"'+ids+'"'));
                     $.messager.confirm('提示', '确认删除吗?', function (r) {
                         if (r) {
-                            $.getJSON('deleteById', {'ids': ids}, function (res) {
+                            $.getJSON('deleteById',ids, function (res) {
                                 $.messager.show({
                                     title: '提示',
                                     msg: res == 200 ? '删除成功' : '删除失败',
@@ -146,7 +159,7 @@
             {checkbox: true},
             // {field: 'id', title: 'ID', width: 20},
             {field: 'question', title: '题目', width: 180},
-            {field: 'answer', title: '答案', width: 80},
+            {field: 'answer', title: '答案', width: 60},
             {
                 field: 'datetime', title: '创建时间', sortable: true,
                 sorter: function (a, b) {
@@ -181,7 +194,7 @@
         // $.messager.progress();
         $.messager.confirm('提示', '确认删除吗?', function (r) {
             if (r) {
-                $.getJSON('deleteById', {'ids': [row.id]}, function (res) {
+                $.getJSON('deleteById', {'q': row.question, 'a': row.answer}, function (res) {
                     $.messager.show({
                         title: '提示',
                         msg: res == 200 ? '删除成功' : '删除失败',
@@ -195,6 +208,25 @@
                 })
             }
         });
+    }
+
+    //采用jquery easyui loading css效果
+    function ajaxLoading() {
+        $("<div class=\"datagrid-mask\"></div>").css({
+            display: "block",
+            width: "100%",
+            height: $(window).height()
+        }).appendTo("body");
+        $("<div class=\"datagrid-mask-msg\"></div>").html("正在处理，请稍候。。。").appendTo("body").css({
+            display: "block",
+            left: ($(document.body).outerWidth(true) - 190) / 2,
+            top: ($(window).height() - 45) / 2
+        });
+    }
+
+    function ajaxLoadEnd() {
+        $(".datagrid-mask").remove();
+        $(".datagrid-mask-msg").remove();
     }
 </script>
 </body>

@@ -8,6 +8,7 @@
 import json
 import time
 
+import requests
 from bottle import route, run, static_file, request
 import sqlite3
 
@@ -48,6 +49,7 @@ class DbTool:
 		if count > 0:
 			return True
 		else:
+			print('删除了0行')
 			return False
 
 	def query(self, sql, param=None):
@@ -80,12 +82,14 @@ def insertOrUpdate():
 	f = request.POST.decode('utf-8')
 	question = f.get('question')
 	answer = f.get('answer')
+	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
 	print('question=', question, 'answer=', answer)
 	t = time.strftime('%Y-%m-%d %H:%M:%S')
 	db = DbTool()
-	q = db.query('select * from tikuNet where question = "' + question + '" and answer = "' + answer + '"')
+	q = db.query('select * from ' + tableName + ' where question = "' + question + '" and answer = "' + answer + '"')
 	if not len(q):
-		result = db.execute('insert into tikuNet(question,answer,datetime) values (?,?,?)', (question, answer, t))
+		result = db.execute('insert into ' + tableName + '(question,answer,datetime) values (?,?,?)',
+							(question, answer, t))
 		return json.dumps(200 if result else 500)
 	else:
 		return json.dumps(202)
@@ -94,58 +98,72 @@ def insertOrUpdate():
 @route('/search', method=['GET'])
 def search():
 	keyword = request.GET.decode('utf-8').get('keyword', '')
+	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
 	page = int(request.GET.decode('utf-8').get('page', 1))
 	rows = int(request.GET.decode('utf-8').get('rows', 10))
 	limit = (page - 1) * rows
 	db = DbTool()
 	total = db.query(
-		'select count(*) from tikuNet where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%"')
+		'select count(*) from ' + tableName + ' where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%"')
 	result = db.query(
-		'select * from tikuNet where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%" LIMIT ' +
+		'select question,answer,datetime from ' + tableName + ' where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%" LIMIT ' +
 		str(limit) + ',' + str(rows))
 	data = {'total': total[0][0], 'rows': []}
 	for r in result:
-		data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': r[3]})
+		# data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': 0})
+		data['rows'].append({'id': 0, 'question': r[0], 'answer': r[1], 'datetime': r[2]})
+	###################################将tikuNet表中的题库，插入到tiku表中###############
+	# question = r[1]
+	# answer = r[2]
+	# db = DbTool()
+	# q = db.query('select * from ' + 'tiku' + ' where question = "' + question + '" and answer = "' + answer + '"')
+	# if not len(q):
+	# 	result = db.execute('insert into ' + 'tiku' + '(question,answer) values (?,?)', (question, answer))
+	# 	print(result)
+	###################################将tikuNet表中的题库，插入到tiku表中###############
 	return json.dumps(data)
 
 
 @route('/searchRepeatData', method=['GET'])
 def searchRepeatData():
+	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
 	db = DbTool()
-	# q = 'select * from tikuNet where question in (select  question  from  tikuNet  group  by  question  having  count(question) > 1)'
-	q = 'select *  from  tikuNet  group  by  question  having  count(question) > 1'
+	q = 'SELECT question,answer,datetime FROM ' + tableName + '  WHERE ( question ) IN (SELECT question FROM ' + tableName + '  GROUP BY question HAVING count( question ) > 1)'
 	result = db.query(q)
 	data = {'total': len(result), 'rows': []}
 	for r in result:
-		data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': r[3]})
+		# data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': 0})
+		data['rows'].append({'id': 0, 'question': r[0], 'answer': r[1], 'datetime': r[2]})
 	return json.dumps(data)
 
 
 @route('/deleteById', method=['GET'])
 def deleteById():
-	ids = request.query.decode('utf-8').getall('ids[]')
-	if len(ids) == 1:
-		ids = '(' + ids[0] + ')'
-	else:
-		ids = str(tuple(ids))
+	q = request.query.decode('utf-8').get('q')
+	a = request.query.decode('utf-8').get('a')
+	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
 	db = DbTool()
-	res = db.execute('delete from tikuNet where id in ' + ids)
+	# res = db.execute('delete from ' + tableName + ' where id in ' + ids)
+	sql = 'delete from ' + tableName + ' where question = "' + q + '" and answer = "' + a + '"'
+	print(sql)
+	res = db.execute(sql)
 	return json.dumps(200 if res else 500)
 
 
 @route('/onekeyclear', method=['GET'])
 def onekeyclear():
+	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
 	sql = """
 		DELETE 
 		FROM
-			tikuNet 
+			""" + tableName + """
 		WHERE
-			( tikuNet.question,tikuNet.answer ) IN ( SELECT question,answer FROM tikuNet GROUP BY question,answer HAVING count( * ) > 1 ) 
+			( """ + tableName + """.question,""" + tableName + """.answer ) IN ( SELECT question,answer FROM """ + tableName + """ GROUP BY question,answer HAVING count( * ) > 1 ) 
 			AND rowid NOT IN (
 		SELECT
 			min( rowid ) 
 		FROM
-			tikuNet 
+			""" + tableName + """ 
 		GROUP BY
 			question,answer 
 		HAVING
@@ -158,12 +176,36 @@ def onekeyclear():
 
 @route('/getAnswerByQuestion', method=['GET'])
 def getAnswerByQuestion():
+	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
 	question = request.GET.decode('utf-8').get('question', '')
+	print('question:',question)
 	db = DbTool()
-	result = db.query('select * from tikuNet where question = ' + question)
+	# select question,answer,datetime from tiku where question like "%aa%"or answer like "%aa%" LIMIT 0,10
+	sql = 'select answer from ' + tableName + ' where question like "%' + question + '%"'
+	print(sql)
+	result = db.query(sql)
 	# http://localhost:8088/getAnswerByQuestion?question="根据《中华人民共和国无线电管理条例》，境外组织或者个人不得在我国境内进行或者。任何单位或者个人不得向境外组织或者个人提供涉及国家安全的境内。"
-	return result[0][2]
+	return result[0][0]
 
+
+@route('/updateNet2Local', method=['GET'])
+def updateNet2Local():
+	url = "https://cdn.jsdelivr.net/gh/lolisaikou/tiku-autoupdate/questions.json"
+	print(url)
+	res = requests.get(url).json()
+	print(len(res))
+	db = DbTool()
+	for item in res:
+		print(item)
+
+
+# q = db.query('select * from ' + tableName + ' where question = "' + question + '" and answer = "' + answer + '"')
+# if not len(q):
+# 	result = db.execute('insert into ' + tableName + '(question,answer,datetime) values (?,?,?)',
+# 						(question, answer, t))
+# 	return json.dumps(200 if result else 500)
+# else:
+# 	return json.dumps(202)
 
 run(host='0.0.0.0', port=8088)
 # run(host='localhost', port=8088)
