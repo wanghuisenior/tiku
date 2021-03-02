@@ -14,15 +14,18 @@ Hit Ctrl-C to quit.<br>即为启动成功，出现其他异常表示失败
 1. 配合xxqg脚本使用，在答题函数所在js添加以下函数，
 
 	    function updateToServer(question,answer) {
-	    	if (update2server) {
-	    		console.info("开始上传")
-	    		var res = http.post("http://服务器IP:端口/insertOrUpdate", 
-	    		{"question": question,"answer": answer});
-	    		if (res.body.json()==200) {
-	    		console.info("成功")
-	    		}
-	    	}
+            console.info("开始上传")
+            var res = http.post("http://服务器IP:端口/insertOrUpdate", 
+            {"question": question,"answer": answer});
+            if (res.body.json()==200) {
+            console.info("成功")
+            }
     	}
-2. 在答题函数获取到问题和答案的地方调用该函数：updateToServer(question,answer)即可。
-3. 调用题库接口获取答案:请求接口http://IP:端口/getAnswerByQuestion?question=问题,即可获取到对应的答案
+    	
+    	function getAnswer(question) {
+            var a = http.post("http://服务器IP:端口/getAnswerByQuestion?question="+question);
+            return a;
+        }
+2. 在答题函数获取到问题和答案的地方调用该函数：updateToServer(question,answer)即可上传题库。
+3. 获取答案:getAnswer('题目')
 # 注：本项目为个人学习bottle编写，不得用于违法或商业用途，否则造成的一切后果自负！

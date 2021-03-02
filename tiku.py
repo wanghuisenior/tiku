@@ -188,17 +188,6 @@ def getAnswerByQuestion():
 	return result[0][0]
 
 
-@route('/updateNet2Local', method=['GET'])
-def updateNet2Local():
-	url = "https://cdn.jsdelivr.net/gh/lolisaikou/tiku-autoupdate/questions.json"
-	print(url)
-	res = requests.get(url).json()
-	print(len(res))
-	db = DbTool()
-	for item in res:
-		print(item)
-
-
 # q = db.query('select * from ' + tableName + ' where question = "' + question + '" and answer = "' + answer + '"')
 # if not len(q):
 # 	result = db.execute('insert into ' + tableName + '(question,answer,datetime) values (?,?,?)',
@@ -207,5 +196,5 @@ def updateNet2Local():
 # else:
 # 	return json.dumps(202)
 
-run(host='0.0.0.0', port=8088)
+run(host='0.0.0.0', port=8000)
 # run(host='localhost', port=8088)
