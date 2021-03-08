@@ -101,10 +101,10 @@
                         //ids.push(checked[i].id);
                         ids.push({"q": checked[i].question, "a": checked[i].answer});
                     }
-                    // console.log(JSON.parse('"'+ids+'"'));
                     $.messager.confirm('提示', '确认删除吗?', function (r) {
                         if (r) {
-                            $.getJSON('deleteById',ids, function (res) {
+                            $("#table").datagrid("loading");
+                            $.getJSON('deleteById', {'ids[]': JSON.stringify(ids)}, function (res) {
                                 $.messager.show({
                                     title: '提示',
                                     msg: res == 200 ? '删除成功' : '删除失败',

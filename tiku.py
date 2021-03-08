@@ -142,12 +142,21 @@ def deleteById():
 	q = request.query.decode('utf-8').get('q')
 	a = request.query.decode('utf-8').get('a')
 	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
+	ids = request.GET.decode('utf-8').get('ids[]')
+	if ids:
+		for item in json.loads(ids):
+			deleteQ(tableName, item['q'], item['a'])
+	else:
+		deleteQ(tableName, q, a)
+	return json.dumps(200)
+
+
+def deleteQ(t, q, a):
 	db = DbTool()
 	# res = db.execute('delete from ' + tableName + ' where id in ' + ids)
-	sql = 'delete from ' + tableName + ' where question = "' + q + '" and answer = "' + a + '"'
-	print(sql)
+	sql = 'delete from ' + t + ' where question = "' + q + '" and answer = "' + a + '"'
 	res = db.execute(sql)
-	return json.dumps(200 if res else 500)
+	return res
 
 
 @route('/onekeyclear', method=['GET'])
@@ -174,17 +183,20 @@ def onekeyclear():
 	return json.dumps(200 if res else 500)
 
 
-@route('/getAnswerByQuestion', method=['GET'])
+@route('/getAnswerByQuestion')
 def getAnswerByQuestion():
 	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
 	question = request.GET.decode('utf-8').get('question', '')
-	print('question:',question)
+	if question.startswith("'") and question.startswith("'"):
+		question = question[1: -1]
+	if question.startswith('"') and question.startswith('"'):
+		question = question[1: -1]
+	print('question:', question)
 	db = DbTool()
 	# select question,answer,datetime from tiku where question like "%aa%"or answer like "%aa%" LIMIT 0,10
 	sql = 'select answer from ' + tableName + ' where question like "%' + question + '%"'
 	print(sql)
 	result = db.query(sql)
-	# http://localhost:8088/getAnswerByQuestion?question="根据《中华人民共和国无线电管理条例》，境外组织或者个人不得在我国境内进行或者。任何单位或者个人不得向境外组织或者个人提供涉及国家安全的境内。"
 	return result[0][0]
 
 
