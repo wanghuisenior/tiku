@@ -1,1 +1,2 @@
 python tiku.py
+pause

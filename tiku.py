@@ -82,14 +82,12 @@ def insertOrUpdate():
 	f = request.POST.decode('utf-8')
 	question = f.get('question')
 	answer = f.get('answer')
-	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
-	print('question=', question, 'answer=', answer)
 	t = time.strftime('%Y-%m-%d %H:%M:%S')
 	db = DbTool()
-	q = db.query('select * from ' + tableName + ' where question = "' + question + '" and answer = "' + answer + '"')
+	q = db.query('select * from tiku where question = "' + question + '" and answer = "' + answer + '"')
 	if not len(q):
-		result = db.execute('insert into ' + tableName + '(question,answer,datetime) values (?,?,?)',
-							(question, answer, t))
+		result = db.execute('insert into tiku(question,answer,datetime) values (?,?,?)',
+							(question, answer,t))
 		return json.dumps(200 if result else 500)
 	else:
 		return json.dumps(202)
@@ -98,20 +96,19 @@ def insertOrUpdate():
 @route('/search', method=['GET'])
 def search():
 	keyword = request.GET.decode('utf-8').get('keyword', '')
-	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
 	page = int(request.GET.decode('utf-8').get('page', 1))
 	rows = int(request.GET.decode('utf-8').get('rows', 10))
 	limit = (page - 1) * rows
 	db = DbTool()
 	total = db.query(
-		'select count(*) from ' + tableName + ' where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%"')
+		'select count(*) from tiku where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%"')
 	result = db.query(
-		'select question,answer,datetime from ' + tableName + ' where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%" LIMIT ' +
+		'select * from tiku where question like ' + '"%' + keyword + '%"' + 'or answer like ' + '"%' + keyword + '%" LIMIT ' +
 		str(limit) + ',' + str(rows))
 	data = {'total': total[0][0], 'rows': []}
 	for r in result:
 		# data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': 0})
-		data['rows'].append({'id': 0, 'question': r[0], 'answer': r[1], 'datetime': r[2]})
+		data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': r[3]})
 	###################################将tikuNet表中的题库，插入到tiku表中###############
 	# question = r[1]
 	# answer = r[2]
@@ -126,42 +123,43 @@ def search():
 
 @route('/searchRepeatData', method=['GET'])
 def searchRepeatData():
-	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
+	tableName = 'tiku'
 	db = DbTool()
-	q = 'SELECT question,answer,datetime FROM ' + tableName + '  WHERE ( question ) IN (SELECT question FROM ' + tableName + '  GROUP BY question HAVING count( question ) > 1)'
+	q = 'SELECT * FROM '+ tableName +' GROUP BY question HAVING count( question ) > 1'
 	result = db.query(q)
 	data = {'total': len(result), 'rows': []}
 	for r in result:
-		# data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': 0})
-		data['rows'].append({'id': 0, 'question': r[0], 'answer': r[1], 'datetime': r[2]})
+		data['rows'].append({'id': r[0], 'question': r[1], 'answer': r[2], 'datetime': r[3]})
 	return json.dumps(data)
 
 
 @route('/deleteById', method=['GET'])
 def deleteById():
-	q = request.query.decode('utf-8').get('q')
-	a = request.query.decode('utf-8').get('a')
-	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
+	tableName = 'tiku'
+	qid=request.query.decode('utf-8').get('id')
 	ids = request.GET.decode('utf-8').get('ids[]')
-	if ids:
+	if qid:
+		deleteQ(tableName,qid)
+	elif ids:
 		for item in json.loads(ids):
-			deleteQ(tableName, item['q'], item['a'])
+			deleteQ(tableName,str(item))
 	else:
-		deleteQ(tableName, q, a)
+		print('error')
 	return json.dumps(200)
 
 
-def deleteQ(t, q, a):
+def deleteQ(tableName,qid):
 	db = DbTool()
 	# res = db.execute('delete from ' + tableName + ' where id in ' + ids)
-	sql = 'delete from ' + t + ' where question = "' + q + '" and answer = "' + a + '"'
+	sql = 'delete from ' + tableName + ' where id = "' + qid + '"'
 	res = db.execute(sql)
 	return res
 
 
 @route('/onekeyclear', method=['GET'])
 def onekeyclear():
-	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
+	# 一键清楚重复数据
+	tableName = 'tiku'
 	sql = """
 		DELETE 
 		FROM
@@ -185,17 +183,15 @@ def onekeyclear():
 
 @route('/getAnswerByQuestion')
 def getAnswerByQuestion():
-	tableName = request.GET.decode('utf-8').get('table_name', 'tiku')
+	tableName = 'tiku'
 	question = request.GET.decode('utf-8').get('question', '')
 	if question.startswith("'") and question.startswith("'"):
 		question = question[1: -1]
 	if question.startswith('"') and question.startswith('"'):
 		question = question[1: -1]
-	print('question:', question)
 	db = DbTool()
 	# select question,answer,datetime from tiku where question like "%aa%"or answer like "%aa%" LIMIT 0,10
 	sql = 'select answer from ' + tableName + ' where question like "%' + question + '%"'
-	print(sql)
 	result = db.query(sql)
 	return result[0][0]
 
