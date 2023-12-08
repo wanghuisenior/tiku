@@ -45,7 +45,32 @@
     <br>
     <table id="table"></table>
 </div>
+<div id="diaEdit" class="easyui-dialog" style="padding:30px;">
+    <form id="form" method="post">
+        <input type="hidden" id="form_id">
+        <table>
+            <tr>
+                <td>题目:</td>
+                <td><input class="easyui-textbox" id="form_q" data-options="multiline:true"
+                           style="height:40px;width: 200px"></input></td>
+            </tr>
+            <tr>
+                <td>答案:</td>
+                <td><input class="easyui-textbox" id="form_a" data-options="multiline:true"
+                           style="height:40px;width: 200px"></input></td>
+            </tr>
+        </table>
+    </form>
+    <div style="text-align:center;padding:5px">
+        <a href="javascript:void(0)" class="easyui-linkbutton" onclick="editRow()">提交</a>
+    </div>
+</div>
 <script>
+    $(function () {
+        // 关闭弹窗
+        $('#diaEdit').dialog('close');
+    })
+
     function submit() {
         var q = $("#question").val();
         var a = $("#answer").val();
@@ -100,10 +125,10 @@
                         //ids.push(checked[i].id);
                         ids.push(checked[i].id);
                     }
-                    $.messager.confirm('提示', '确认删除吗?', function (r) {
-                        if (r) {
+                    $.messager.prompt('提示', '请输入操作密码', function (pwd) {
+                        if (pwd) {
                             $("#table").datagrid("loading");
-                            $.getJSON('deleteById', {'ids[]': JSON.stringify(ids)}, function (res) {
+                            $.getJSON('deleteById', {'pwd': pwd, 'ids[]': JSON.stringify(ids)}, function (res) {
                                 $.messager.show({
                                     title: '提示',
                                     msg: res == 200 ? '删除成功' : '删除失败',
@@ -176,24 +201,64 @@
                 }
             },
             {
-                field: 'operate', title: '操作', align: 'center', width: 30,
+                field: 'operate', title: '操作', align: 'center', width: 60,
                 formatter: function (value, row, index) {
-                    var del = '<a name="opera" class="easyui-linkbutton" data-options="plain:true,iconCls:\'icon-remove\'" onclick="deleteRow(' + index + ')"></a>';
+                    var del = '<a name="edit" class="easyui-linkbutton" data-options="plain:true,iconCls:\'icon-edit\'" onclick="showEditPanel(' + index + ')"></a>' +
+                        '<a name="delete" class="easyui-linkbutton" data-options="plain:true,iconCls:\'icon-remove\'" onclick="deleteRow(' + index + ')"></a>';
                     return del;
                 }
             }
         ]],
         onLoadSuccess: function (data) {
-            $("a[name='opera']").linkbutton({text: '删除', plain: true, iconCls: 'icon-remove'});
+            $("a[name='edit']").linkbutton({text: '修改', plain: true, iconCls: 'icon-edit'});
+            $("a[name='delete']").linkbutton({text: '删除', plain: true, iconCls: 'icon-remove'});
         }
     });
+
+    function showEditPanel(index) {
+        var row = $("#table").datagrid("getRows")[index];
+        if (row) {
+            $('#diaEdit').dialog('open').dialog({
+                title: "编辑",
+                width: 350,
+                height: 200,
+                modal: true
+            });
+            $("#form_id").val(row.id);
+            $("#form_q").val(row.question);
+            $("#form_a").val(row.answer);
+        } else {
+            $.messager.alert("提示", "请选中要编辑的行！");
+        }
+    }
+
+    function editRow() {
+        var qid = $("#form_id").val();
+        var que = $("#form_q").val();
+        var ans = $("#form_a").val();
+        $.post("update",
+            {'id': qid, "question": que, "answer": ans},
+            function (res) {
+                $.messager.show({
+                    title: '提示',
+                    msg: res == 200 ? '修改成功' : '修改失败',
+                    showType: 'fade',      //设置显示类型
+                    style: {},     //设置弹框的位置
+                    // width:100,                           //设置弹框的宽度和高度
+                    // height:200,
+                    timeout: 500      //设置停留时间，1000毫秒
+                });
+                $('#diaEdit').dialog('close');
+                $("#table").datagrid("reload");
+            });
+    }
 
     function deleteRow(index) {
         var row = $("#table").datagrid("getRows")[index];
         // $.messager.progress();
-        $.messager.confirm('提示', '确认删除吗?', function (r) {
-            if (r) {
-                $.getJSON('deleteById', {'id': row.id}, function (res) {
+        $.messager.prompt('提示', '请输入操作密码', function (pwd) {
+            if (pwd) {
+                $.getJSON('deleteById', {'pwd': pwd, 'id': row.id}, function (res) {
                     $.messager.show({
                         title: '提示',
                         msg: res == 200 ? '删除成功' : '删除失败',

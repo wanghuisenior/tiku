@@ -87,7 +87,7 @@ def insertOrUpdate():
 	q = db.query('select * from tiku where question = "' + question + '" and answer = "' + answer + '"')
 	if not len(q):
 		result = db.execute('insert into tiku(question,answer,datetime) values (?,?,?)',
-							(question, answer,t))
+							(question, answer, t))
 		return json.dumps(200 if result else 500)
 	else:
 		return json.dumps(202)
@@ -125,7 +125,7 @@ def search():
 def searchRepeatData():
 	tableName = 'tiku'
 	db = DbTool()
-	q = 'SELECT * FROM '+ tableName +' GROUP BY question HAVING count( question ) > 1'
+	q = 'SELECT * FROM ' + tableName + ' GROUP BY question HAVING count( question ) > 1'
 	result = db.query(q)
 	data = {'total': len(result), 'rows': []}
 	for r in result:
@@ -136,19 +136,23 @@ def searchRepeatData():
 @route('/deleteById', method=['GET'])
 def deleteById():
 	tableName = 'tiku'
-	qid=request.query.decode('utf-8').get('id')
+	pwd = request.query.decode('utf-8').get('pwd')
+	qid = request.query.decode('utf-8').get('id')
 	ids = request.GET.decode('utf-8').get('ids[]')
-	if qid:
-		deleteQ(tableName,qid)
-	elif ids:
-		for item in json.loads(ids):
-			deleteQ(tableName,str(item))
+	if pwd == 'wanghui':
+		if qid:
+			deleteQ(tableName, qid)
+		elif ids:
+			for item in json.loads(ids):
+				deleteQ(tableName, str(item))
+		else:
+			print('error')
+		return json.dumps(200)
 	else:
-		print('error')
-	return json.dumps(200)
+		return json.dumps(500)
 
 
-def deleteQ(tableName,qid):
+def deleteQ(tableName, qid):
 	db = DbTool()
 	# res = db.execute('delete from ' + tableName + ' where id in ' + ids)
 	sql = 'delete from ' + tableName + ' where id = "' + qid + '"'
@@ -196,6 +200,19 @@ def getAnswerByQuestion():
 	return result[0][0]
 
 
+@route('/update',method=['POST'])
+def update():
+	f = request.POST.decode('utf-8')
+	id = f.get('id')
+	question = f.get('question')
+	answer = f.get('answer')
+	t = time.strftime('%Y-%m-%d %H:%M:%S')
+	db = DbTool()
+	result = db.execute('update tiku set question=?,answer=?,datetime =? where id =?',
+						(question, answer, t, id))
+	return json.dumps(200)
+
+
 # q = db.query('select * from ' + tableName + ' where question = "' + question + '" and answer = "' + answer + '"')
 # if not len(q):
 # 	result = db.execute('insert into ' + tableName + '(question,answer,datetime) values (?,?,?)',
@@ -204,5 +221,5 @@ def getAnswerByQuestion():
 # else:
 # 	return json.dumps(202)
 
-run(host='0.0.0.0', port=8000)
+run(host='0.0.0.0', port=8088)
 # run(host='localhost', port=8088)
