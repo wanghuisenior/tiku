@@ -79,18 +79,29 @@ def index():
 
 @route('/insertOrUpdate', method=['POST'])
 def insertOrUpdate():
-	f = request.POST.decode('utf-8')
-	question = f.get('question')
-	answer = f.get('answer')
+	'''
+	function updateToServer(question, answer) {
+		console.info("开始上传")
+		var res = http.post(server + "/insertOrUpdate", {"question": question, "answer": answer});
+		//log(res.statusCode)
+		var data = res.body.string();
+		var d1 = JSON.parse(data);
+		console.info(d1)
+	}
+	'''
+	data = request.POST.decode('utf-8')
+	question = data.get('question')
+	answer = data.get('answer')
 	t = time.strftime('%Y-%m-%d %H:%M:%S')
 	db = DbTool()
 	q = db.query('select * from tiku where question = "' + question + '" and answer = "' + answer + '"')
 	if not len(q):
-		result = db.execute('insert into tiku(question,answer,datetime) values (?,?,?)',
-							(question, answer, t))
-		return json.dumps(200 if result else 500)
+		flag = db.execute('insert into tiku(question,answer,datetime) values (?,?,?)',
+						  (question, answer, t))
+		if flag:
+			return json.dumps({'code': 200, 'msg': '添加成功'})
 	else:
-		return json.dumps(202)
+		return json.dumps({'code': 202, 'msg': '失败，该题目已存在'})
 
 
 @route('/search', method=['GET'])
@@ -187,6 +198,16 @@ def onekeyclear():
 
 @route('/getAnswerByQuestion')
 def getAnswerByQuestion():
+	'''
+	function getAnswerByQuestion(question) {
+		var res = http.get(server + "/getAnswerByQuestion?question=" + question);
+		if (res.statusCode == 200) {
+			return res.body.string()
+		} else {
+			log("getAnswerByQuestion出问题");
+		}
+	}
+	'''
 	tableName = 'tiku'
 	question = request.GET.decode('utf-8').get('question', '')
 	if question.startswith("'") and question.startswith("'"):
@@ -200,7 +221,7 @@ def getAnswerByQuestion():
 	return result[0][0]
 
 
-@route('/update',method=['POST'])
+@route('/update', method=['POST'])
 def update():
 	f = request.POST.decode('utf-8')
 	id = f.get('id')

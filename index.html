@@ -52,12 +52,12 @@
             <tr>
                 <td>题目:</td>
                 <td><input class="easyui-textbox" id="form_q" data-options="multiline:true"
-                           style="height:40px;width: 200px"></input></td>
+                           style="height:60px;width: 400px"></input></td>
             </tr>
             <tr>
                 <td>答案:</td>
                 <td><input class="easyui-textbox" id="form_a" data-options="multiline:true"
-                           style="height:40px;width: 200px"></input></td>
+                           style="height:60px;width: 400px"></input></td>
             </tr>
         </table>
     </form>
@@ -80,7 +80,7 @@
                 function (res) {
                     $.messager.show({
                         title: '提示',
-                        msg: res == 200 ? '添加成功' : '添加失败,已存在',
+                        msg: res['code'] == 200 ? '添加成功' : '添加失败,已存在',
                         showType: 'fade',      //设置显示类型
                         style: {},     //设置弹框的位置
                         // width:100,                           //设置弹框的宽度和高度
@@ -88,7 +88,7 @@
                         timeout: 500      //设置停留时间，1000毫秒
                     });
                     $("#table").datagrid("reload");
-                });
+                },'json');
         }
     }
 
@@ -220,8 +220,8 @@
         if (row) {
             $('#diaEdit').dialog('open').dialog({
                 title: "编辑",
-                width: 350,
-                height: 200,
+                width: 500,
+                height: 300,
                 modal: true
             });
             $("#form_id").val(row.id);
@@ -250,7 +250,7 @@
                 });
                 $('#diaEdit').dialog('close');
                 $("#table").datagrid("reload");
-            });
+            },'json');
     }
 
     function deleteRow(index) {
